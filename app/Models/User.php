@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,15 +12,15 @@ use Illuminate\Notifications\Notifiable;
 
 #[Fillable(['name', 'email', 'password', 'role', 'rt', 'rw', 'no_hp', 'is_active', 'warga_id'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    const ROLE_ADMIN        = 'admin';
-    const ROLE_PENGURUS_RW  = 'pengurus_rw';
-    const ROLE_BENDAHARA_RT = 'bendahara_rt';
-    const ROLE_WARGA        = 'warga';
+    public const ROLE_ADMIN        = 'admin';
+    public const ROLE_PENGURUS_RW  = 'pengurus_rw';
+    public const ROLE_BENDAHARA_RT = 'bendahara_rt';
+    public const ROLE_WARGA        = 'warga';
 
     protected function casts(): array
     {
@@ -57,6 +58,8 @@ class User extends Authenticatable
 
     public function canAccessPanel(): bool
     {
-        return $this->is_active && $this->role !== self::ROLE_WARGA;
+        return $this->is_active
+            && $this->hasVerifiedEmail()
+            && $this->role !== self::ROLE_WARGA;
     }
 }

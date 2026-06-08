@@ -18,9 +18,34 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+   protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserCircle;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+      // NEW ADD
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Setting';
+    }
+    public static function getNavigationSort(): ?int
+    {
+        return 1; // ganti angka sesuai urutan yang lo mau
+    }
+    public static function getModelLabel(): string
+    {
+        return 'User';
+    }
+    public static function getPluralModelLabel(): string
+    {
+        return 'User';
+    }
+    protected static ?string $navigationLabel = 'User';
+    protected static ?int    $navigationSort  = 1;
+    // LAST ADD
 
     public static function form(Schema $schema): Schema
     {
