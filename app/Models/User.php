@@ -12,7 +12,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role', 'rt', 'rw', 'no_hp', 'is_active', 'warga_id'])]
+#[Fillable([
+    'tenant_id',
+    'name',
+    'email',
+    'password',
+    'role',
+    'is_active',
+    'warga_id',
+])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
@@ -21,6 +29,8 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 
     public const ROLE_ADMIN        = 'admin';
     public const ROLE_PENGURUS_RW  = 'pengurus_rw';
+    public const ROLE_PENGURUS_RT  = 'pengurus_rt';
+    public const ROLE_BENDAHARA_RW = 'bendahara_rw';
     public const ROLE_BENDAHARA_RT = 'bendahara_rt';
     public const ROLE_WARGA        = 'warga';
 
@@ -43,6 +53,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return $this->role === self::ROLE_ADMIN;
     }
 
+
     public function isPengurusRw(): bool
     {
         return $this->role === self::ROLE_PENGURUS_RW;
@@ -51,6 +62,16 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function isBendaharaRt(): bool
     {
         return $this->role === self::ROLE_BENDAHARA_RT;
+    }
+
+    public function isPengurusRt(): bool
+    {
+        return $this->role === self::ROLE_PENGURUS_RT;
+    }
+
+    public function isBendaharaRw(): bool
+    {
+        return $this->role === self::ROLE_BENDAHARA_RW;
     }
 
     public function isWarga(): bool
@@ -69,5 +90,9 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         }
 
         return $this->hasVerifiedEmail();
+    }
+    public function tenant()
+    {
+        return $this->belongsTo(Tenants::class);
     }
 }

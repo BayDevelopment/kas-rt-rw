@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class WargaResource extends Resource
 {
@@ -47,6 +48,21 @@ class WargaResource extends Resource
     }
     protected static ?string $navigationLabel = 'Warga';
     protected static ?int    $navigationSort  = 1;
+
+    public static function canCreate(): bool
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        return filled($user->tenant_id);
+    }
     // LAST ADD
 
     public static function form(Schema $schema): Schema

@@ -10,12 +10,19 @@ return new class extends Migration
     {
         Schema::create('wargas', function (Blueprint $table) {
             $table->id();
-            $table->string('nama');
-            $table->string('nik')->unique();
-            $table->string('no_rumah');
+
+            $table->foreignId('tenant_id')
+                ->constrained('tenants')
+                ->cascadeOnDelete();
+
+            $table->string('nama', 100);
+            $table->string('nik', 16);
+
+            $table->string('no_rumah', 10);
             $table->string('rt', 3);
             $table->string('rw', 3);
             $table->string('no_hp', 15);
+
             $table->enum('jabatan', [
                 'warga',
                 'ketua_rt',
@@ -25,8 +32,15 @@ return new class extends Migration
                 'sekretaris_rw',
                 'bendahara_rw',
             ])->default('warga');
+
             $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
+
             $table->timestamps();
+
+            $table->unique(['tenant_id', 'nik'], 'wargas_tenant_nik_unique');
+            $table->index(['tenant_id', 'rt', 'rw']);
+            $table->index(['tenant_id', 'status']);
+            $table->index('jabatan');
         });
     }
 

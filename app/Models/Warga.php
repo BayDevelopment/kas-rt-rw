@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['nama', 'nik', 'no_rumah', 'rt', 'rw', 'no_hp', 'jabatan', 'status'])]
+#[Fillable(['tenant_id', 'nama', 'nik', 'no_rumah', 'rt', 'rw', 'no_hp', 'jabatan', 'status'])]
 class Warga extends Model
 {
     public function user()
@@ -21,5 +21,9 @@ class Warga extends Model
     public function pengeluaran()
     {
         return $this->hasMany(Pengeluaran::class);
+    }
+    public function tenant()
+    {
+        return $this->belongsTo(Tenants::class);
     }
 }

@@ -11,14 +11,33 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pemasukans', function (Blueprint $table) {
+       Schema::create('pemasukans', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('warga_id')->constrained('wargas')->onDelete('cascade');
-            $table->foreignId('periode_id')->constrained('periodes')->onDelete('cascade');
+
+            $table->foreignId('tenant_id')
+                ->constrained('tenants')
+                ->cascadeOnDelete();
+
+            $table->foreignId('warga_id')
+                ->constrained('wargas')
+                ->cascadeOnDelete();
+
+            $table->foreignId('periode_id')
+                ->constrained('periodes')
+                ->cascadeOnDelete();
+
             $table->decimal('jumlah', 10, 2);
             $table->date('tanggal');
+
             $table->string('keterangan')->nullable();
+
             $table->timestamps();
+
+            $table->index('tenant_id');
+            $table->index('warga_id');
+            $table->index('periode_id');
+            $table->index(['tenant_id', 'tanggal']);
+            $table->index(['tenant_id', 'periode_id']);
         });
     }
 

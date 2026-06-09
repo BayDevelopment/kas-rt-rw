@@ -10,21 +10,41 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+
+            $table->foreignId('tenant_id')
+                ->nullable()
+                ->constrained('tenants')
+                ->nullOnDelete();
+
+            $table->foreignId('warga_id')
+                ->nullable()
+                ->constrained('wargas')
+                ->nullOnDelete();
+
+            $table->string('name', 100);
             $table->string('email')->unique();
+
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['admin', 'pengurus_rw', 'bendahara_rt', 'warga'])->default('warga');
-            $table->string('rt', 3)->nullable();
-            $table->string('rw', 3)->nullable();
-            $table->string('no_hp', 15)->nullable();
+
+            $table->enum('role', [
+                'admin',
+                'pengurus_rw',
+                'pengurus_rt',
+                'bendahara_rw',
+                'bendahara_rt',
+                'warga',
+            ])->default('warga');
+
             $table->boolean('is_active')->default(true);
-            $table->foreignId('warga_id')->nullable()->constrained('wargas')->nullOnDelete();
+
             $table->rememberToken();
             $table->timestamps();
 
+            $table->index('tenant_id');
+            $table->index('warga_id');
             $table->index('role');
-            $table->index(['rt', 'rw']);
+            $table->index(['tenant_id', 'role']);
             $table->index('is_active');
         });
 
@@ -36,7 +56,11 @@ return new class extends Migration
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
+
+            $table->foreignId('user_id')
+                ->nullable()
+                ->index();
+
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->longText('payload');

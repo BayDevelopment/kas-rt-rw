@@ -9,6 +9,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Auth\Events\Registered;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -22,10 +23,12 @@ class UsersTable
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('tenant.nama')
+                    ->label('Tenant')
+                    ->placeholder('Belum ada tenant')
+                    ->searchable()
+                    ->sortable(),
 
                 TextColumn::make('name')
                     ->label('Nama Pengguna')
@@ -39,46 +42,29 @@ class UsersTable
                     ->sortable()
                     ->copyable()
                     ->copyMessage('Alamat email berhasil disalin.'),
+
                 TextColumn::make('role')
                     ->label('Peran')
                     ->badge()
-                    ->formatStateUsing(
-                        fn(string $state): string => match ($state) {
-                            'admin'        => 'Admin',
-                            'pengurus_rw'  => 'Pengurus RW',
-                            'bendahara_rt' => 'Bendahara RT',
-                            'warga'        => 'Warga',
-                            default        => 'Tidak Diketahui',
-                        }
-                    )
-                    ->color(
-                        fn(string $state): string => match ($state) {
-                            'admin'        => 'danger',
-                            'pengurus_rw'  => 'warning',
-                            'bendahara_rt' => 'info',
-                            'warga'        => 'success',
-                            default        => 'gray',
-                        }
-                    )
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'admin'        => 'Admin',
+                        'pengurus_rw'  => 'Pengurus RW',
+                        'pengurus_rt'  => 'Pengurus RT',
+                        'bendahara_rw' => 'Bendahara RW',
+                        'bendahara_rt' => 'Bendahara RT',
+                        'warga'        => 'Warga',
+                        default        => 'Tidak Diketahui',
+                    })
+                    ->color(fn(string $state): string => match ($state) {
+                        'admin'        => 'danger',
+                        'pengurus_rw'  => 'warning',
+                        'pengurus_rt'  => 'warning',
+                        'bendahara_rw' => 'info',
+                        'bendahara_rt' => 'info',
+                        'warga'        => 'success',
+                        default        => 'gray',
+                    })
                     ->sortable(),
-                TextColumn::make('rt')
-                    ->label('RT')
-                    ->placeholder('-')
-                    ->sortable()
-                    ->searchable(),
-
-                TextColumn::make('rw')
-                    ->label('RW')
-                    ->placeholder('-')
-                    ->sortable()
-                    ->searchable(),
-
-                TextColumn::make('no_hp')
-                    ->label('Nomor Telepon')
-                    ->placeholder('Belum diisi')
-                    ->searchable()
-                    ->copyable()
-                    ->copyMessage('Nomor telepon berhasil disalin.'),
 
                 TextColumn::make('warga.nama')
                     ->label('Data Warga')
@@ -86,89 +72,71 @@ class UsersTable
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
+
                 TextColumn::make('is_active')
                     ->label('Status Akun')
                     ->badge()
-                    ->formatStateUsing(
-                        fn($state): string => (bool) $state
-                            ? 'Aktif'
-                            : 'Nonaktif'
-                    )
-                    ->color(
-                        fn($state): string => (bool) $state
-                            ? 'success'
-                            : 'danger'
-                    )
+                    ->formatStateUsing(fn($state): string => (bool) $state ? 'Aktif' : 'Nonaktif')
+                    ->color(fn($state): string => (bool) $state ? 'success' : 'danger')
                     ->sortable(),
 
                 TextColumn::make('email_verified_at')
                     ->label('Status Email')
                     ->badge()
-                    ->getStateUsing(
-                        fn($record) => $record->email_verified_at
-                            ? 'Terverifikasi'
-                            : 'Belum Terverifikasi'
-                    )
-                    ->color(
-                        fn($record) => $record->email_verified_at
-                            ? 'success'
-                            : 'danger'
-                    )
+                    ->getStateUsing(fn(User $record): string => $record->email_verified_at
+                        ? 'Terverifikasi'
+                        : 'Belum Terverifikasi')
+                    ->color(fn(User $record): string => $record->email_verified_at
+                        ? 'success'
+                        : 'danger')
                     ->sortable(),
-
-                TextColumn::make('created_at')
-                    ->label('Dibuat Pada')
-                    ->dateTime('d M Y, H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                TextColumn::make('updated_at')
-                    ->label('Terakhir Diperbarui')
-                    ->dateTime('d M Y, H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
+
             ->filters([
+
+                SelectFilter::make('tenant_id')
+                    ->label('Tenant')
+                    ->relationship('tenant', 'nama')
+                    ->searchable()
+                    ->preload(),
+
                 SelectFilter::make('role')
                     ->label('Peran Pengguna')
                     ->options([
                         'admin'        => 'Admin',
                         'pengurus_rw'  => 'Pengurus RW',
+                        'pengurus_rt'  => 'Pengurus RT',
+                        'bendahara_rw' => 'Bendahara RW',
                         'bendahara_rt' => 'Bendahara RT',
                         'warga'        => 'Warga',
                     ]),
+
                 TernaryFilter::make('is_active')
                     ->label('Status Akun')
                     ->placeholder('Semua status akun')
                     ->trueLabel('Hanya akun aktif')
                     ->falseLabel('Hanya akun nonaktif'),
-                SelectFilter::make('rt')
-                    ->label('RT')
-                    ->options(
-                        fn(): array => User::query()
-                            ->whereNotNull('rt')
-                            ->where('rt', '!=', '')
-                            ->orderBy('rt')
-                            ->pluck('rt', 'rt')
-                            ->all()
-                    )
-                    ->searchable(),
-
-                SelectFilter::make('rw')
-                    ->label('RW')
-                    ->options(
-                        fn(): array => User::query()
-                            ->whereNotNull('rw')
-                            ->where('rw', '!=', '')
-                            ->orderBy('rw')
-                            ->pluck('rw', 'rw')
-                            ->all()
-                    )
-                    ->searchable(),
             ])
             ->recordActions([
                 ActionGroup::make([
                     EditAction::make(),
+
+                    Action::make('send_verification_email')
+                        ->label('Kirim Verifikasi')
+                        ->icon('heroicon-o-envelope')
+                        ->color('info')
+                        ->requiresConfirmation()
+                        ->visible(fn(User $record): bool => ! $record->hasVerifiedEmail())
+                        ->action(function (User $record): void {
+
+                            $record->sendEmailVerificationNotification();
+
+                            Notification::make()
+                                ->success()
+                                ->title('Email verifikasi berhasil dikirim')
+                                ->body("Email verifikasi telah dikirim ke {$record->email}")
+                                ->send();
+                        }),
 
                     Action::make('verify_email')
                         ->label('Verifikasi Email')
@@ -211,22 +179,18 @@ class UsersTable
                                 ->body('Alamat email pengguna sekarang berstatus belum terverifikasi.')
                                 ->send();
                         }),
+
                     DeleteAction::make()
                         ->requiresConfirmation()
                         ->modalHeading('Hapus data?')
-                        ->modalDescription('Data akan dipindahkan ke trash.')
-                        ->successNotification(
-                            Notification::make()
-                                ->title('Berhasil')
-                                ->body('Data berhasil dihapus')
-                                ->success()
-                        ),
+                        ->modalDescription('Data akan dipindahkan ke trash.'),
                 ])
                     ->label('Aksi')
                     ->icon('heroicon-o-ellipsis-vertical')
                     ->button()
                     ->outlined(),
             ])
+
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
