@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -12,7 +14,7 @@ use Illuminate\Notifications\Notifiable;
 
 #[Fillable(['name', 'email', 'password', 'role', 'rt', 'rw', 'no_hp', 'is_active', 'warga_id'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -56,10 +58,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->role === self::ROLE_WARGA;
     }
 
-    public function canAccessPanel(): bool
+    public function canAccessPanel(Panel $panel): bool
     {
-        return $this->is_active
-            && $this->hasVerifiedEmail()
-            && $this->role !== self::ROLE_WARGA;
+        if (! $this->is_active) {
+            return false;
+        }
+
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        return $this->hasVerifiedEmail();
     }
 }

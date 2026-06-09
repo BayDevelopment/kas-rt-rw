@@ -2,10 +2,15 @@
 
 namespace App\Filament\Resources\Wargas\Tables;
 
+use App\Models\Warga;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -57,7 +62,7 @@ class WargasTable
                 TextColumn::make('rt')
                     ->label('RT / RW')
                     ->formatStateUsing(
-                        fn ($record) => 'RT ' . $record->rt . ' / RW ' . $record->rw
+                        fn($record) => 'RT ' . $record->rt . ' / RW ' . $record->rw
                     )
                     ->sortable()
                     ->alignCenter()
@@ -78,17 +83,17 @@ class WargasTable
                     ->label('Status')
                     ->badge()
                     ->alignCenter()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'aktif'    => 'success',
                         'nonaktif' => 'danger',
                         default    => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'aktif'    => 'Aktif',
                         'nonaktif' => 'Nonaktif',
                         default    => ucfirst($state),
                     })
-                    ->tooltip(fn (string $state): string => match ($state) {
+                    ->tooltip(fn(string $state): string => match ($state) {
                         'aktif'    => 'Warga aktif & tercatat di wilayah ini',
                         'nonaktif' => 'Warga sudah pindah atau tidak aktif',
                         default    => '',
@@ -123,19 +128,21 @@ class WargasTable
                         'aktif'    => 'Aktif',
                         'nonaktif' => 'Nonaktif',
                     ])
-                    ->indicator('Status'),           // tampil sebagai chip di atas tabel
+                    ->indicator('Status'),
 
                 SelectFilter::make('rt')
                     ->label('Rukun Tetangga (RT)')
                     ->placeholder('Semua RT')
                     ->options(
-                        // opsi RT 001–020; sesuaikan sesuai kebutuhan wilayah
-                        collect(range(1, 20))
-                            ->mapWithKeys(fn ($n) => [
-                                str_pad($n, 3, '0', STR_PAD_LEFT) =>
-                                'RT ' . str_pad($n, 3, '0', STR_PAD_LEFT),
+                        fn(): array => Warga::query()
+                            ->whereNotNull('rt')
+                            ->distinct()
+                            ->orderBy('rt')
+                            ->pluck('rt', 'rt')
+                            ->mapWithKeys(fn($rt) => [
+                                $rt => 'RT ' . str_pad((string) $rt, 3, '0', STR_PAD_LEFT),
                             ])
-                            ->all()
+                            ->toArray()
                     )
                     ->indicator('RT'),
 
@@ -143,12 +150,15 @@ class WargasTable
                     ->label('Rukun Warga (RW)')
                     ->placeholder('Semua RW')
                     ->options(
-                        collect(range(1, 10))
-                            ->mapWithKeys(fn ($n) => [
-                                str_pad($n, 3, '0', STR_PAD_LEFT) =>
-                                'RW ' . str_pad($n, 3, '0', STR_PAD_LEFT),
+                        fn(): array => Warga::query()
+                            ->whereNotNull('rw')
+                            ->distinct()
+                            ->orderBy('rw')
+                            ->pluck('rw', 'rw')
+                            ->mapWithKeys(fn($rw) => [
+                                $rw => 'RW ' . str_pad((string) $rw, 3, '0', STR_PAD_LEFT),
                             ])
-                            ->all()
+                            ->toArray()
                     )
                     ->indicator('RW'),
 
@@ -166,13 +176,37 @@ class WargasTable
 
             // ── AKSI PER BARIS ────────────────────────────────────────
             ->recordActions([
-                ViewAction::make()
-                    ->label('Lihat')
-                    ->tooltip('Lihat detail data warga'),
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->label('Lihat')
+                        ->icon('heroicon-o-eye')
+                        ->tooltip('Lihat detail data warga'),
 
-                EditAction::make()
-                    ->label('Edit')
-                    ->tooltip('Ubah data warga'),
+                    EditAction::make()
+                        ->label('Edit')
+                        ->icon('heroicon-o-pencil-square')
+                        ->tooltip('Ubah data warga'),
+
+                    DeleteAction::make()
+                        ->label('Hapus')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Hapus data warga?')
+                        ->modalDescription('Data warga akan dihapus permanen dari sistem dan tidak dapat dikembalikan.')
+                        ->modalSubmitActionLabel('Ya, hapus permanen')
+                        ->modalCancelActionLabel('Batal')
+                        ->successNotification(
+                            Notification::make()
+                                ->title('Berhasil')
+                                ->body('Data warga berhasil dihapus permanen.')
+                                ->success()
+                        ),
+                ])
+                    ->label('Aksi')
+                    ->icon('heroicon-o-ellipsis-vertical')
+                    ->button()
+                    ->outlined()
             ])
 
             // ── AKSI TOOLBAR (bulk) ───────────────────────────────────
@@ -184,7 +218,7 @@ class WargasTable
                         ->modalHeading('Hapus Data Warga')
                         ->modalDescription(
                             'Data warga yang dihapus tidak dapat dikembalikan. ' .
-                            'Pastikan Anda sudah memilih warga yang benar.'
+                                'Pastikan Anda sudah memilih warga yang benar.'
                         )
                         ->modalSubmitActionLabel('Ya, Hapus Sekarang'),
                 ]),

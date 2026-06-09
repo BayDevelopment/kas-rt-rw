@@ -104,8 +104,16 @@ class UsersTable
                 TextColumn::make('email_verified_at')
                     ->label('Status Email')
                     ->badge()
-                    ->formatStateUsing(fn($state): string => filled($state) ? 'Terverifikasi' : 'Belum Verifikasi')
-                    ->color(fn($state): string => filled($state) ? 'success' : 'warning')
+                    ->getStateUsing(
+                        fn($record) => $record->email_verified_at
+                            ? 'Terverifikasi'
+                            : 'Belum Terverifikasi'
+                    )
+                    ->color(
+                        fn($record) => $record->email_verified_at
+                            ? 'success'
+                            : 'danger'
+                    )
                     ->sortable(),
 
                 TextColumn::make('created_at')

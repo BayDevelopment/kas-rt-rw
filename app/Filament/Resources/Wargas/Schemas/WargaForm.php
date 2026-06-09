@@ -45,11 +45,12 @@ class WargaForm
                             ->required()
                             ->unique(table: 'wargas', column: 'nik', ignoreRecord: true)
                             ->length(16)
-                            ->numeric()
+                            ->regex('/^[0-9]{16}$/')
                             ->validationMessages([
                                 'required' => 'NIK wajib diisi.',
                                 'unique'   => 'NIK ini sudah terdaftar dalam sistem.',
-                                'digits'   => 'NIK harus tepat 16 digit angka.',
+                                'length'   => 'NIK harus tepat 16 digit angka.',
+                                'regex'    => 'NIK hanya boleh berisi 16 digit angka.',
                             ])
                             ->extraInputAttributes([
                                 'autocomplete' => 'off',
@@ -144,7 +145,7 @@ class WargaForm
                             ->label('Status Warga')
                             ->helperText(
                                 'Aktif: warga tinggal & tercatat di wilayah ini. ' .
-                                'Nonaktif: warga sudah pindah atau tidak lagi tercatat.'
+                                    'Nonaktif: warga sudah pindah atau tidak lagi tercatat.'
                             )
                             ->options([
                                 'aktif'    => '✅  Aktif',
@@ -157,6 +158,24 @@ class WargaForm
                                 'required' => 'Status warga wajib dipilih.',
                             ]),
 
+                        Select::make('jabatan')
+                            ->label('Jabatan Warga')
+                            ->helperText('Pilih jabatan warga dalam struktur RT/RW.')
+                            ->options([
+                                'warga'         => 'Warga',
+                                'ketua_rt'      => 'Ketua RT',
+                                'sekretaris_rt' => 'Sekretaris RT',
+                                'bendahara_rt'  => 'Bendahara RT',
+                                'ketua_rw'      => 'Ketua RW',
+                                'sekretaris_rw' => 'Sekretaris RW',
+                                'bendahara_rw'  => 'Bendahara RW',
+                            ])
+                            ->default('warga')
+                            ->required()
+                            ->native(false)
+                            ->validationMessages([
+                                'required' => 'Jabatan warga wajib dipilih.',
+                            ]),
                     ]),
 
             ]);
