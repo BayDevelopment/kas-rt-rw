@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Pengeluaran extends Model
 {
     protected $fillable = [
+        'tenant_id',
         'periode_id',
         'jumlah',
         'tanggal',
@@ -17,5 +18,9 @@ class Pengeluaran extends Model
     public function periode()
     {
         return $this->belongsTo(Periode::class);
+    }
+    public function tenant()
+    {
+        return $this->belongsTo(Tenants::class);
     }
 }

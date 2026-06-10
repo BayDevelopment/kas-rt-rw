@@ -14,7 +14,7 @@ class ListPeriodes extends ListRecords
     {
         return [
             CreateAction::make()
-            ->label('Tambah Periode')
+            ->label('Periode')
             ->icon('heroicon-o-plus'),
         ];
     }
